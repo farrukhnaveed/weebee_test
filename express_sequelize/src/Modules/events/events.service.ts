@@ -1,6 +1,7 @@
 import Event from './entities/event.entity';
 import Workshop from './entities/workshop.entity';
-
+import { Op } from 'sequelize';
+import { now } from 'sequelize/types/utils';
 
 export class EventsService {
 
@@ -86,19 +87,7 @@ export class EventsService {
      */
 
   async getEventsWithWorkshops() {
-    let events: any = await Event.findAll({
-      attributes: {
-        exclude: ['updatedAt']
-      },
-    });
-    events = await Promise.all(events.map( async (event: any) => {
-      event.dataValues['workshops'] = await Workshop.findAll({
-        attributes: {
-          exclude: ['updatedAt']
-        },
-      });
-      return event;
-    }));
+    const events = await this.getEvents();
     return events;
   }
 
@@ -169,6 +158,29 @@ export class EventsService {
     ```
      */
   async getFutureEventWithWorkshops() {
-    throw new Error('TODO task 2');
+    const events = await this.getEvents(true);
+    return events;
+  }
+
+  getEvents = async (future: boolean = false) => {
+    let events: any = await Event.findAll({
+      attributes: {
+        exclude: ['updatedAt']
+      },
+    });
+    events = await Promise.all(events.map( async (event: any) => {
+      const where: { eventId: number, start?: {} } = { eventId: event.id};
+      if (future) where.start = {
+        $gt: new Date()
+      };
+      event.dataValues['workshops'] = await Workshop.findAll({
+        where,
+        attributes: {
+          exclude: [ 'start', 'end', 'updatedAt']
+        },
+      });
+      return event;
+    }));
+    return events;
   }
 }
