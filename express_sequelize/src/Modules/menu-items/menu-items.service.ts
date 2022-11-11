@@ -1,3 +1,5 @@
+import MenuItem from "./entities/menu-item.entity";
+
 export class MenuItemsService {
 
   /* TODO: complete getMenuItems so that it returns a nested menu structure
@@ -76,6 +78,34 @@ export class MenuItemsService {
   */
 
   async getMenuItems() {
-    throw new Error('TODO in task 3');
+    const items: any = {};
+    const keys: number[] = [];
+    const result: any[] = [];
+    const menuItems = await MenuItem.findAll({
+        order: ['parentId desc']
+    });
+
+    menuItems.forEach(item => {
+        items[item.id] = item;
+        keys.push(item.id);
+        items[item.id]['children'] = [];
+    })
+
+    keys.map( key => {
+        const item = items[key];
+
+        if (item.parentId) {
+            items[item.parentId].children.push(item);
+            items[key] = null;
+        }
+
+    });
+
+    keys.map( key => {
+        if (items[key] !== null) {
+            result.push(items[key]);
+        }
+    });
+    return result;
   }
 }
